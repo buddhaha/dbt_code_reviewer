@@ -40,19 +40,13 @@ def run_semantic_review(
 
     content = changed_file.full_content or '\n'.join(changed_file.added_lines)
 
-    user_message = f"""Review this dbt model: `{changed_file.model_name}`
-
-**File path:** `{changed_file.path}`
-
-**SQL content:**
-```sql
-{content}
-```
-
-**Deterministic checks already found:**
-{det_summary or '(none)'}
-
-Please review for semantic issues. Use get_rules to understand best practices, then add_finding for each issue you discover that isn't already covered by the deterministic findings above."""
+    user_message = kb_client.get_prompt(
+        "review-model",
+        model_name=changed_file.model_name,
+        file_path=changed_file.path,
+        model_sql=content,
+        det_summary=det_summary or "(none)",
+    )
 
     messages = [{"role": "user", "content": user_message}]
 

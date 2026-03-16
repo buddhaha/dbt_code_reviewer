@@ -91,16 +91,11 @@ def resource_order_by() -> str:
 
 @mcp.prompt()
 def review_model(model_name: str, model_sql: str) -> str:
+    # use promp template instead of hardcoded string
     template_path = KNOWLEDGE_DIR / "prompts" / "review-model.md"
     template = template_path.read_text()
     return template.replace("{{model_name}}", model_name).replace("{{model_sql}}", model_sql)
 
-
-@mcp.prompt()
-def assess_join(model_name: str, model_sql: str) -> str:
-    template_path = KNOWLEDGE_DIR / "prompts" / "assess-join.md"
-    template = template_path.read_text()
-    return template.replace("{{model_name}}", model_name).replace("{{model_sql}}", model_sql)
 
 
 if __name__ == "__main__":

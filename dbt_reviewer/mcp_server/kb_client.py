@@ -36,6 +36,13 @@ class KBClient:
             "bad_examples": rule.get("bad_examples", []),
         }
 
+    def get_prompt(self, name: str, **kwargs) -> str:
+        path = KNOWLEDGE_DIR / "prompts" / f"{name}.md"
+        template = path.read_text()
+        for key, value in kwargs.items():
+            template = template.replace("{{" + key + "}}", str(value))
+        return template
+
     def search_patterns(self, query: str) -> list[dict]:
         query_lower = query.lower()
         results = []
@@ -45,9 +52,3 @@ class KBClient:
                 results.append({"rule_id": rule_id, **rule})
         return results
 
-    def get_prompt(self, name: str, **kwargs) -> str:
-        path = KNOWLEDGE_DIR / "prompts" / f"{name}.md"
-        template = path.read_text()
-        for key, value in kwargs.items():
-            template = template.replace("{{" + key + "}}", str(value))
-        return template

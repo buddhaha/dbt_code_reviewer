@@ -1,12 +1,16 @@
 # Review dbt Model: {{model_name}}
 
-You are reviewing the dbt model `{{model_name}}` for semantic issues.
+You are reviewing the dbt model `{{model_name}}` (`{{file_path}}`).
 
 ## Model SQL
 
 ```sql
 {{model_sql}}
 ```
+
+## Deterministic checks already found
+
+{{det_summary}}
 
 ## Review Focus
 
@@ -28,4 +32,5 @@ Check for the following semantic issues (in order of importance):
    - Are aliases meaningful?
    - Is the intent clear from the SQL structure?
 
+Do NOT re-report issues already listed under "Deterministic checks already found" above.
 Use `get_rules` to review the knowledge base, then `add_finding` for each issue discovered.
