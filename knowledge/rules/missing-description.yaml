@@ -1,0 +1,39 @@
+id: missing_description
+category: deterministic
+severity: info
+name: Missing model description in schema.yml
+description: >
+  Every dbt model should have a description in schema.yml. Descriptions
+  are surfaced in dbt docs and help the team understand model purpose.
+good_examples:
+  - description: Model with description and column docs
+    yaml: |
+      models:
+        - name: stg_orders
+          description: "Staging model for raw orders from the jaffle_shop source."
+          columns:
+            - name: order_id
+              description: "Primary key for orders."
+              tests:
+                - unique
+                - not_null
+bad_examples:
+  - description: Model with no schema.yml entry
+    issue: "Model is undocumented — dbt docs will show no description"
+  - description: Model with empty description
+    yaml: |
+      models:
+        - name: stg_orders
+          description: ""
+    issue: "Empty description is as unhelpful as none"
+sources:
+  - url: https://docs.getdbt.com/best-practices/best-practice-workflows
+    section: "Document everything"
+    key_insight: >
+      Documentation in schema.yml is used by dbt docs, lineage tools,
+      and helps new team members understand the data model.
+  - url: https://www.phdata.io/blog/why-should-you-codify-your-best-practices-in-dbt/
+    section: "Source YAML"
+    key_insight: >
+      Auto-generating schema.yml stubs and requiring descriptions before merge
+      ensures the knowledge base stays current.

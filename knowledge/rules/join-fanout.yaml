@@ -1,0 +1,48 @@
+id: join_fanout
+category: semantic
+severity: warning
+name: Join fanout risk
+description: >
+  A join that doesn't respect the grain of the primary table can silently
+  multiply rows (fanout). This is especially common when joining a one-to-many
+  relationship (e.g. orders -> payments) without aggregating the many side first.
+detection_hints:
+  - "Look for LEFT JOIN / JOIN where the right table has a many-to-one relationship"
+  - "Check if the model's grain (one row per X) is preserved after the join"
+  - "Missing aggregation before join is a strong signal"
+good_examples:
+  - description: Aggregate payments before joining to orders
+    sql: |
+      WITH payment_totals AS (
+          SELECT
+              order_id,
+              SUM(amount) AS total_amount
+          FROM {{ ref('stg_payments') }}
+          GROUP BY order_id
+      )
+      SELECT
+          o.id AS order_id,
+          o.order_date,
+          p.total_amount
+      FROM {{ ref('stg_orders') }} o
+      LEFT JOIN payment_totals p ON o.id = p.order_id
+bad_examples:
+  - description: Direct join orders to payments without aggregation
+    sql: |
+      SELECT *
+      FROM {{ ref('stg_orders') }} o
+      LEFT JOIN {{ ref('stg_payments') }} p ON o.id = p.order_id
+    issue: >
+      If an order has 3 payments, this produces 3 rows per order.
+      Any downstream COUNT(order_id) will be 3x inflated.
+sources:
+  - url: https://www.getdbt.com/blog/how-to-review-an-analytics-pull-request
+    section: "Data returns expected results"
+    key_insight: >
+      Check if a join altered the grain of the data or fanned out rows.
+      Query for uniqueness on the unique key defined in the model's test.
+  - url: https://dbt-labs.github.io/dbt-project-evaluator/0.8/rules/modeling/
+    section: "fct_model_fanout"
+    key_insight: >
+      Parents with more than 3 direct leaf children indicate fanout.
+      Each source should feed a single staging model.

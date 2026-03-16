@@ -1,0 +1,37 @@
+id: select_star
+category: deterministic
+severity: warning
+name: Avoid SELECT *
+description: >
+  Using SELECT * makes the model non-deterministic — column order and set change
+  when the upstream source changes, breaking downstream models silently.
+detection:
+  regex: 'SELECT\s+\*'
+  flags: IGNORECASE
+good_examples:
+  - description: Explicit column list
+    sql: |
+      SELECT
+          id,
+          order_date,
+          status,
+          amount
+      FROM {{ ref('raw_orders') }}
+bad_examples:
+  - description: SELECT * from upstream
+    sql: |
+      SELECT *
+      FROM {{ ref('raw_orders') }}
+    issue: >
+      If raw_orders adds a column, it silently appears in all downstream models.
+      If a column is removed, downstream breaks with an unclear error.
+sources:
+  - url: https://www.getdbt.com/blog/how-to-review-an-analytics-pull-request
+    section: "Correct SQL"
+    key_insight: >
+      Always list columns explicitly. SELECT * makes schema changes invisible
+      and breaks downstream models unpredictably.
+  - url: https://docs.getdbt.com/best-practices/best-practice-workflows
+    section: "SQL style guide"
+    key_insight: >
+      Explicit column lists document the model's contract and make diffs readable.

@@ -1,0 +1,38 @@
+id: hardcoded_refs
+category: deterministic
+severity: error
+name: Hardcoded schema/table references
+description: >
+  Direct references to database objects (schema.table or db.schema.table) bypass
+  dbt's dependency graph, breaking cross-environment deploys and DAG lineage.
+detection:
+  regex: '\b(FROM|JOIN)\s+(?![\w]+\s*\()[\w]+\.[\w.]+'
+  flags: IGNORECASE
+good_examples:
+  - description: Using ref() for models
+    sql: |
+      SELECT *
+      FROM {{ ref('stg_orders') }}
+  - description: Using source() for raw tables
+    sql: |
+      SELECT *
+      FROM {{ source('jaffle_shop', 'orders') }}
+bad_examples:
+  - description: Hardcoded three-part reference
+    sql: |
+      SELECT *
+      FROM raw.jaffle_shop.orders
+    issue: >
+      Hardcoded path breaks when deploying to dev/staging environments with
+      different database names. dbt cannot build the DAG lineage.
+sources:
+  - url: https://docs.getdbt.com/best-practices/best-practice-workflows
+    section: "Use ref() and source()"
+    key_insight: >
+      ref() and source() enable environment-aware deploys, DAG lineage,
+      and automatic dependency ordering.
+  - url: https://dbt-labs.github.io/dbt-project-evaluator/0.8/rules/modeling/
+    section: "source_fanout"
+    key_insight: >
+      Hard-coded references are flagged by dbt-project-evaluator as they
+      hide dependencies from the DAG and break CI/CD pipelines.

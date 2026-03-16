@@ -1,0 +1,43 @@
+id: order_by_non_final
+category: deterministic
+severity: warning
+name: ORDER BY in non-final model
+description: >
+  dbt does not guarantee row order between model runs. ORDER BY in staging or
+  intermediate models is meaningless and misleads readers into thinking order
+  is preserved downstream.
+detection:
+  regex: '\bORDER\s+BY\b'
+  flags: IGNORECASE
+  exclude_contexts:
+    - "window functions (OVER clause)"
+good_examples:
+  - description: No ORDER BY in staging model
+    sql: |
+      SELECT
+          id,
+          order_date,
+          status
+      FROM {{ source('jaffle_shop', 'orders') }}
+  - description: ORDER BY only in window function (acceptable)
+    sql: |
+      SELECT
+          id,
+          ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date) as rn
+      FROM {{ ref('stg_orders') }}
+bad_examples:
+  - description: ORDER BY at end of staging model
+    sql: |
+      SELECT
+          id,
+          order_date,
+          status
+      FROM {{ source('jaffle_shop', 'orders') }}
+      ORDER BY order_date DESC
+    issue: "Row order is not preserved between runs. Misleading."
+sources:
+  - url: https://www.getdbt.com/blog/how-to-review-an-analytics-pull-request
+    section: "SQL style"
+    key_insight: >
+      dbt does not guarantee row order between runs. ORDER BY in non-final
+      models wastes compute and creates false expectations for downstream users.

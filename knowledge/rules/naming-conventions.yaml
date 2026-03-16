@@ -1,0 +1,43 @@
+id: naming_conventions
+category: deterministic
+severity: warning
+name: Model naming conventions
+description: >
+  dbt projects use a layered naming convention that communicates a model's
+  role at a glance: stg_ (staging), int_ (intermediate), fct_/dim_ (marts).
+layers:
+  staging:
+    prefix: stg_
+    purpose: "1:1 with source tables, light transformation only"
+    example: stg_orders.sql
+  intermediate:
+    prefix: int_
+    purpose: "Business logic, aggregations, joins between staging models"
+    example: int_order_payments.sql
+  marts:
+    prefixes: [fct_, dim_, mart_, rpt_]
+    purpose: "Final business-facing models"
+    example: fct_orders.sql
+good_examples:
+  - description: Correctly named staging model
+    name: stg_customers.sql
+  - description: Correctly named mart model
+    name: fct_orders.sql
+bad_examples:
+  - description: Missing layer prefix
+    name: orders_staging.sql
+    issue: "Cannot determine layer from filename alone"
+  - description: Abbreviation in name
+    name: stg_ord.sql
+    issue: "dbt style guide recommends no abbreviations"
+sources:
+  - url: https://docs.getdbt.com/best-practices/how-we-structure/1-guide-overview
+    section: "Naming conventions"
+    key_insight: >
+      Consistent naming communicates model purpose immediately and makes
+      the project navigable for new team members.
+  - url: https://www.phdata.io/blog/why-should-you-codify-your-best-practices-in-dbt/
+    section: "Staging model conventions"
+    key_insight: >
+      Staging models should be 1:1 with source tables. Naming as stg_<source>_<table>
+      makes the source immediately clear.

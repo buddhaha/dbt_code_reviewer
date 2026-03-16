@@ -1,0 +1,66 @@
+{
+  "findings": [
+    {
+      "file": "models/staging/stg_bad_orders.sql",
+      "line": null,
+      "rule_id": "no_ref_or_source",
+      "severity": "error",
+      "message": "Model contains no ref() or source() calls — all upstream dependencies must use dbt's dependency resolution.",
+      "source": "deterministic"
+    },
+    {
+      "file": "models/staging/stg_bad_orders.sql",
+      "line": 4,
+      "rule_id": "hardcoded_refs",
+      "severity": "error",
+      "message": "Hardcoded reference 'raw.jaffle_shop.orders' — use {{ ref('model') }} or {{ source('src', 'table') }} instead.",
+      "source": "deterministic"
+    },
+    {
+      "file": "models/staging/stg_bad_orders.sql",
+      "line": 5,
+      "rule_id": "hardcoded_refs",
+      "severity": "error",
+      "message": "Hardcoded reference 'raw.jaffle_shop.payments' — use {{ ref('model') }} or {{ source('src', 'table') }} instead.",
+      "source": "deterministic"
+    },
+    {
+      "file": "models/staging/stg_bad_orders.sql",
+      "line": 3,
+      "rule_id": "select_star",
+      "severity": "warning",
+      "message": "Avoid SELECT * — list columns explicitly for deterministic output and performance.",
+      "source": "deterministic"
+    },
+    {
+      "file": "models/staging/stg_bad_orders.sql",
+      "line": 8,
+      "rule_id": "order_by_non_final",
+      "severity": "warning",
+      "message": "ORDER BY in a non-final model is redundant — dbt doesn't guarantee row order. Remove it or move to the final mart model.",
+      "source": "deterministic"
+    },
+    {
+      "file": "models/staging/stg_bad_orders.sql",
+      "line": 5,
+      "rule_id": "join_fanout",
+      "severity": "warning",
+      "message": "Join fanout risk: joining orders (1) to payments (many) without aggregating payments first. Each order with multiple payments will produce multiple rows, inflating downstream counts.",
+      "source": "semantic"
+    },
+    {
+      "file": "models/staging/stg_bad_orders.sql",
+      "line": null,
+      "rule_id": "missing_description",
+      "severity": "info",
+      "message": "Model 'stg_bad_orders' has no entry in schema.yml — add a description and tests.",
+      "source": "deterministic"
+    }
+  ],
+  "summary": {
+    "total": 7,
+    "errors": 3,
+    "warnings": 3,
+    "infos": 1
+  }
+}

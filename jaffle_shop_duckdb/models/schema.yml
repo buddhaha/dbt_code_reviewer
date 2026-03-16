@@ -1,0 +1,64 @@
+version: 2
+
+sources:
+  - name: jaffle_shop
+    database: raw
+    schema: jaffle_shop
+    tables:
+      - name: raw_customers
+        description: "Raw customer data from the jaffle_shop application."
+      - name: raw_orders
+        description: "Raw order data from the jaffle_shop application."
+      - name: raw_payments
+        description: "Raw payment data from the jaffle_shop application."
+
+models:
+  - name: stg_customers
+    description: "Staging model for customers. Renames and casts columns from the raw source."
+    columns:
+      - name: customer_id
+        description: "Primary key for customers."
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_orders
+    description: "Staging model for orders. Renames columns from the raw source."
+    columns:
+      - name: order_id
+        description: "Primary key for orders."
+        tests:
+          - unique
+          - not_null
+      - name: status
+        description: "Order status."
+        tests:
+          - accepted_values:
+              values: ['placed', 'shipped', 'completed', 'return_pending', 'returned']
+
+  - name: stg_payments
+    description: "Staging model for payments. Renames columns and converts amount from cents."
+    columns:
+      - name: payment_id
+        description: "Primary key for payments."
+        tests:
+          - unique
+          - not_null
+
+  - name: customers
+    description: "One record per customer with lifetime value and order history."
+    columns:
+      - name: customer_id
+        description: "Primary key."
+        tests:
+          - unique
+          - not_null
+
+  - name: orders
+    description: "One record per order with payment breakdowns."
+    columns:
+      - name: order_id
+        description: "Primary key."
+        tests:
+          - unique
+          - not_null
