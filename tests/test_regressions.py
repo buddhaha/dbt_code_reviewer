@@ -64,6 +64,46 @@ class RegressionTests(unittest.TestCase):
         self.assertTrue(examples["good_examples"])
         self.assertTrue(examples["bad_examples"])
 
+    def test_server_review_model_replaces_all_placeholders(self):
+        fastmcp_module = ModuleType("fastmcp")
+
+        class FastMCPStub:
+            def __init__(self, *_args, **_kwargs):
+                pass
+
+            def tool(self):
+                return lambda func: func
+
+            def resource(self, *_args, **_kwargs):
+                return lambda func: func
+
+            def prompt(self):
+                return lambda func: func
+
+        fastmcp_module.FastMCP = FastMCPStub
+        original = sys.modules.get("fastmcp")
+        sys.modules["fastmcp"] = fastmcp_module
+
+        try:
+            server = importlib.import_module("dbt_reviewer.mcp_server.server")
+        finally:
+            if original is None:
+                sys.modules.pop("fastmcp", None)
+            else:
+                sys.modules["fastmcp"] = original
+
+        prompt = server.review_model(
+            "stg_orders",
+            "select 1",
+            "models/staging/stg_orders.sql",
+            "- [WARNING] select_star: Avoid SELECT *",
+        )
+
+        self.assertIn("models/staging/stg_orders.sql", prompt)
+        self.assertIn("- [WARNING] select_star: Avoid SELECT *", prompt)
+        self.assertNotIn("{{file_path}}", prompt)
+        self.assertNotIn("{{det_summary}}", prompt)
+
     def test_no_ref_or_source_triggers_without_hardcoded_ref(self):
         finding = make_changed_file(
             "with ids as (select 1 as id)\nselect id\nfrom ids\n"
@@ -97,9 +137,15 @@ class RegressionTests(unittest.TestCase):
 
         self.assertEqual(2, len(deduped))
 
-    def test_assess_join_replaces_model_name(self):
+    def test_review_prompt_replaces_model_name(self):
         client = KBClient()
-        prompt = client.get_prompt("assess-join", model_name="stg_orders", model_sql="select 1")
+        prompt = client.get_prompt(
+            "review-model",
+            model_name="stg_orders",
+            file_path="models/staging/stg_orders.sql",
+            model_sql="select 1",
+            det_summary="(none)",
+        )
 
         self.assertIn("stg_orders", prompt)
         self.assertNotIn("{{model_name}}", prompt)
@@ -159,6 +205,9 @@ class RegressionTests(unittest.TestCase):
 
             def get_examples(self, _rule_id):
                 return {}
+
+            def get_prompt(self, _name, **_kwargs):
+                return "Rendered prompt"
 
         status_messages = []
         findings = reviewer.run_semantic_review(

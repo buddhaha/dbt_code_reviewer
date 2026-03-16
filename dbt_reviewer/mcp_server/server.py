@@ -90,11 +90,16 @@ def resource_order_by() -> str:
 
 
 @mcp.prompt()
-def review_model(model_name: str, model_sql: str) -> str:
-    # use promp template instead of hardcoded string
+def review_model(model_name: str, model_sql: str, file_path: str = "", det_summary: str = "(none)") -> str:
     template_path = KNOWLEDGE_DIR / "prompts" / "review-model.md"
     template = template_path.read_text()
-    return template.replace("{{model_name}}", model_name).replace("{{model_sql}}", model_sql)
+    return (
+        template
+        .replace("{{model_name}}", model_name)
+        .replace("{{file_path}}", file_path)
+        .replace("{{model_sql}}", model_sql)
+        .replace("{{det_summary}}", det_summary)
+    )
 
 
 
