@@ -8,16 +8,22 @@ mcp = FastMCP("dbt-reviewer-kb")
 
 
 def _load_rule(rule_id: str) -> dict:
-    path = KNOWLEDGE_DIR / "rules" / f"{rule_id}.yaml"
-    if path.exists():
-        return yaml.safe_load(path.read_text())
+    for candidate in {rule_id, rule_id.replace("_", "-")}:
+        path = KNOWLEDGE_DIR / "rules" / f"{candidate}.yaml"
+        if path.exists():
+            return yaml.safe_load(path.read_text())
     return {}
 
 
 def _load_all_rules() -> dict[str, dict]:
     rules = {}
     for f in (KNOWLEDGE_DIR / "rules").glob("*.yaml"):
-        rules[f.stem] = yaml.safe_load(f.read_text())
+        rule = yaml.safe_load(f.read_text())
+        if not isinstance(rule, dict):
+            continue
+
+        rule_id = rule.get("id") or f.stem.replace("-", "_")
+        rules[rule_id] = rule
     return rules
 
 
@@ -91,10 +97,10 @@ def review_model(model_name: str, model_sql: str) -> str:
 
 
 @mcp.prompt()
-def assess_join(model_sql: str) -> str:
+def assess_join(model_name: str, model_sql: str) -> str:
     template_path = KNOWLEDGE_DIR / "prompts" / "assess-join.md"
     template = template_path.read_text()
-    return template.replace("{{model_sql}}", model_sql)
+    return template.replace("{{model_name}}", model_name).replace("{{model_sql}}", model_sql)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,13 @@
+diff --git a/models/intermediate/orders_rollup.sql b/models/intermediate/orders_rollup.sql
+new file mode 100644
+--- /dev/null
++++ b/models/intermediate/orders_rollup.sql
+@@ -0,0 +1,8 @@
++WITH manual_orders AS (
++    SELECT 1 AS order_id, 100 AS amount
++    UNION ALL
++    SELECT 2 AS order_id, 50 AS amount
++)
++SELECT order_id, amount
++FROM manual_orders
++ORDER BY amount DESC

@@ -8,7 +8,7 @@ def deduplicate(findings: list[Finding]) -> list[Finding]:
     seen = set()
     result = []
     for f in findings:
-        key = (f.file, f.line, f.rule_id)
+        key = (f.file, f.line, f.rule_id, f.severity, f.message)
         if key not in seen:
             seen.add(key)
             result.append(f)

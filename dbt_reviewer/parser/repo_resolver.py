@@ -15,8 +15,9 @@ def resolve_files(changed_files: list[ChangedFile], repo_path: str) -> list[Chan
             if data and 'models' in data:
                 for model in data['models']:
                     schema_map[model['name']] = model
-        except Exception:
-            pass
+        except Exception as e:
+            import sys
+            print(f"Warning: failed to parse {schema_file}: {e}", file=sys.stderr)
 
     for cf in changed_files:
         full_path = repo / cf.path

@@ -1,0 +1,42 @@
+{
+  "findings": [
+    {
+      "file": "models/intermediate/orders_rollup.sql",
+      "line": null,
+      "rule_id": "no_ref_or_source",
+      "severity": "error",
+      "message": "Model contains no ref() or source() calls — all upstream dependencies must use dbt's dependency resolution.",
+      "source": "deterministic"
+    },
+    {
+      "file": "models/intermediate/orders_rollup.sql",
+      "line": null,
+      "rule_id": "naming_conventions",
+      "severity": "warning",
+      "message": "Model 'orders_rollup' in intermediate/ should be prefixed with 'int_'.",
+      "source": "deterministic"
+    },
+    {
+      "file": "models/intermediate/orders_rollup.sql",
+      "line": 8,
+      "rule_id": "order_by_non_final",
+      "severity": "warning",
+      "message": "ORDER BY in a non-final model is redundant — dbt doesn't guarantee row order. Remove it or move to the final mart model.",
+      "source": "deterministic"
+    },
+    {
+      "file": "models/intermediate/orders_rollup.sql",
+      "line": null,
+      "rule_id": "missing_description",
+      "severity": "info",
+      "message": "Model 'orders_rollup' has no entry in schema.yml — add a description and tests.",
+      "source": "deterministic"
+    }
+  ],
+  "summary": {
+    "total": 4,
+    "errors": 1,
+    "warnings": 2,
+    "infos": 1
+  }
+}

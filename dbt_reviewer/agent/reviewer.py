@@ -1,4 +1,5 @@
 import json
+from typing import Callable, Optional
 from dbt_reviewer.models import ChangedFile, Finding
 from dbt_reviewer.agent.tools import AGENT_TOOLS, make_finding_from_tool_input
 from dbt_reviewer.mcp_server.kb_client import KBClient
@@ -23,8 +24,13 @@ def run_semantic_review(
     deterministic_findings: list[Finding],
     kb_client: KBClient,
     llm_client: AnthropicClient,
+    status_callback: Optional[Callable[[str], None]] = None,
 ) -> list[Finding]:
     semantic_findings = []
+
+    def emit_status(message: str) -> None:
+        if status_callback is not None:
+            status_callback(message)
 
     det_summary = "\n".join(
         f"- [{f.severity.value.upper()}] {f.rule_id}: {f.message}"
@@ -50,8 +56,12 @@ Please review for semantic issues. Use get_rules to understand best practices, t
 
     messages = [{"role": "user", "content": user_message}]
 
+    MAX_ITERATIONS = 10
     # ReAct loop
-    for _ in range(10):  # max iterations
+    for iteration in range(MAX_ITERATIONS):
+        emit_status(
+            f"Agent turn {iteration + 1}: sending prompt to Anthropic with tool definitions"
+        )
         response = llm_client.create_message(
             messages=messages,
             tools=AGENT_TOOLS,
@@ -62,9 +72,11 @@ Please review for semantic issues. Use get_rules to understand best practices, t
         messages.append({"role": "assistant", "content": response.content})
 
         if response.stop_reason == "end_turn":
+            emit_status("Agent finished without requesting more tools")
             break
 
         if response.stop_reason != "tool_use":
+            emit_status(f"Agent stopped with reason '{response.stop_reason}'")
             break
 
         # Process tool calls
@@ -77,19 +89,27 @@ Please review for semantic issues. Use get_rules to understand best practices, t
             tool_input = block.input
 
             if tool_name == "add_finding":
+                emit_status("Agent requested add_finding; recording semantic finding locally")
                 finding = make_finding_from_tool_input(changed_file.path, tool_input)
                 semantic_findings.append(finding)
                 result = {"status": "ok", "finding_added": True}
 
             elif tool_name == "get_rules":
                 category = tool_input.get("category", "all")
+                emit_status(
+                    f"Agent requested get_rules(category='{category}'); loading knowledge locally"
+                )
                 result = kb_client.get_rules(category)
 
             elif tool_name == "get_examples":
                 rule_id = tool_input.get("rule_id", "")
+                emit_status(
+                    f"Agent requested get_examples(rule_id='{rule_id}'); loading knowledge locally"
+                )
                 result = kb_client.get_examples(rule_id)
 
             else:
+                emit_status(f"Agent requested unsupported tool '{tool_name}'")
                 result = {"error": f"Unknown tool: {tool_name}"}
 
             tool_results.append({
@@ -98,6 +118,9 @@ Please review for semantic issues. Use get_rules to understand best practices, t
                 "content": json.dumps(result),
             })
 
+        emit_status("Returning tool results to Anthropic for the next agent step")
         messages.append({"role": "user", "content": tool_results})
+    else:
+        emit_status(f"Warning: agent reached max iterations ({MAX_ITERATIONS}) without finishing")
 
     return semantic_findings

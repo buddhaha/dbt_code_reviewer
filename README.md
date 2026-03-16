@@ -21,7 +21,61 @@ cat sample/demo.diff | python -m dbt_reviewer --repo-path jaffle_shop_duckdb --n
 # 4. Run full hybrid review (requires ANTHROPIC_API_KEY)
 export ANTHROPIC_API_KEY=sk-ant-...
 cat sample/demo.diff | python -m dbt_reviewer --repo-path jaffle_shop_duckdb
+
+# 5. Run the deterministic-only naming / dependency demo
+cat sample/naming_demo.diff | python -m dbt_reviewer --repo-path jaffle_shop_duckdb --no-llm
 ```
+
+`sample/demo.diff` highlights hardcoded refs, `SELECT *`, and semantic join fanout.
+`sample/naming_demo.diff` highlights naming conventions, missing docs, redundant `ORDER BY`, and a model with no `ref()` / `source()` calls.
+
+---
+
+## Demo Scenarios
+
+Use these sample diffs depending on what you want to show:
+
+- `sample/demo.diff` demonstrates the hybrid review path: deterministic findings plus the semantic `join_fanout` warning.
+- `sample/naming_demo.diff` demonstrates deterministic repo hygiene checks: naming conventions, missing documentation, redundant `ORDER BY`, and missing `ref()` / `source()` usage.
+
+Reference outputs live in `sample/expected_output.json` and `sample/expected_naming_output.json`.
+
+---
+
+## CLI Usage
+
+The CLI reads a unified git diff, resolves the referenced SQL files from a dbt project, runs deterministic checks, and optionally runs the semantic LLM reviewer.
+
+Basic syntax:
+
+```bash
+python -m dbt_reviewer --repo-path <path-to-dbt-project> [--diff <diff-file>] [--no-llm]
+```
+
+How the arguments work:
+
+- `--repo-path` points to the dbt project root so the app can load the full SQL file and any `schema.yml` metadata.
+- `--diff` points to a unified diff file. If you omit it, the CLI reads the diff from standard input.
+- `--no-llm` skips the Anthropic-powered semantic review and runs only deterministic checks.
+
+Common examples:
+
+```bash
+# Read diff from stdin (from example; no testing scenario for git diff HEAD~1 )
+cat sample/demo.diff | python -m dbt_reviewer --repo-path jaffle_shop_duckdb --no-llm
+
+
+# Read diff from a saved file
+python -m dbt_reviewer --repo-path jaffle_shop_duckdb --diff sample/demo.diff
+
+# Deterministic-only review of the naming demo
+python -m dbt_reviewer --repo-path jaffle_shop_duckdb --diff sample/naming_demo.diff --no-llm
+```
+
+Output behavior:
+
+- JSON findings are written to stdout, which makes the tool easy to pipe into files or other scripts.
+- Progress/status messages are written to stderr, so users can see what the app and semantic agent are doing in the background.
 
 ---
 
@@ -135,7 +189,7 @@ FastMCP provides a clean decorator API for building MCP servers, matching the si
 
 ### Why YAML for the knowledge base?
 
-YAML rules are human-readable, diffable, and can be extended without Python changes. A non-engineer can add a new rule by adding a `.yaml` file. The `KBClient` hot-loads them at runtime — no recompilation needed.
+YAML rules are human-readable, diffable, and can be extended without Python changes. A non-engineer can add a new rule by adding a `.yaml` file. The `KBClient` loads them at runtime when instantiated — no recompilation needed.
 
 ### Why ReAct tool-use loop instead of one-shot prompting?
 

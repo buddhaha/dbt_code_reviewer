@@ -19,8 +19,12 @@ class HardcodedRefsCheck(BaseCheck):
         findings = []
         content = cf.full_content or '\n'.join(cf.added_lines)
         has_ref_or_source = bool(self.REF_SOURCE_PATTERN.search(content))
+        has_from_or_join = False
 
         for i, line in enumerate(content.splitlines(), 1):
+            if re.search(r'\b(FROM|JOIN)\b', line, re.IGNORECASE):
+                has_from_or_join = True
+
             m = self.HARDCODED_PATTERN.search(line)
             if m:
                 findings.append(Finding(
@@ -32,8 +36,7 @@ class HardcodedRefsCheck(BaseCheck):
                     source="deterministic"
                 ))
 
-        if not has_ref_or_source and findings:
-            # Add a higher-level finding
+        if not has_ref_or_source and has_from_or_join:
             findings.append(Finding(
                 file=cf.path,
                 line=None,

@@ -13,7 +13,12 @@ class KBClient:
         if self._rules_cache is None:
             self._rules_cache = {}
             for f in (KNOWLEDGE_DIR / "rules").glob("*.yaml"):
-                self._rules_cache[f.stem] = yaml.safe_load(f.read_text())
+                rule = yaml.safe_load(f.read_text())
+                if not isinstance(rule, dict):
+                    continue
+
+                rule_id = rule.get("id") or f.stem.replace("-", "_")
+                self._rules_cache[rule_id] = rule
         return self._rules_cache
 
     def get_rules(self, category: str = "all") -> dict:
